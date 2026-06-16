@@ -48,7 +48,7 @@ Manual copy into an existing repo:
 
 ```powershell
 New-Item -ItemType Directory -Force -Path .\.agents\skills | Out-Null
-git clone https://github.com/Makssay/pharos-failed-transaction-doctor temp-pharos-failed-transaction-doctor
+git clone https://github.com/Makssay/pharos-failed-transaction-doctor-agent-skill temp-pharos-failed-transaction-doctor
 Copy-Item -Path .\temp-pharos-failed-transaction-doctor\.agents\skills\pharos-failed-transaction-doctor -Destination .\.agents\skills\ -Recurse -Force
 ```
 
