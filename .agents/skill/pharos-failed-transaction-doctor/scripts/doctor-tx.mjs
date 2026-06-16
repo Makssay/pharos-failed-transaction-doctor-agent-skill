@@ -128,6 +128,21 @@ const METHOD_HINTS = {
     fields: ["newOwner"],
     causes: ["caller is not owner", "invalid new owner"],
     next: ["Check current owner and new owner address."]
+  },
+  "0x4e71d92d": {
+    name: "claim()",
+    category: "Claim action",
+    fields: [],
+    causes: ["wallet not eligible", "claim window closed", "claim already completed"],
+    next: ["Check claimable amount or eligibility read methods if the contract exposes them.", "Check campaign round/window and whether this wallet already claimed."]
+  }
+};
+
+const CUSTOM_ERROR_HINTS = {
+  "0x969bf728": {
+    name: "NothingToClaim()",
+    causes: ["nothing claimable at the checked state"],
+    next: ["Retry only after claimable state changes."]
   }
 };
 
@@ -644,6 +659,10 @@ function decodeRevertData(data) {
     return { type: "Panic(uint256)", reason: `${PANIC_CODES[code] || "Solidity panic"} (${code})` };
   }
 
+  const hint = CUSTOM_ERROR_HINTS[selector];
+  if (hint) {
+    return { type: "Custom error", reason: hint.name, customErrorSelector: selector, customErrorName: hint.name };
+  }
   return { type: "Custom error", reason: `Unknown custom error selector ${selector}`, customErrorSelector: selector };
 }
 
@@ -714,10 +733,21 @@ function failureDiagnosis(report, tx, receipt) {
       if (sim.revertReason) {
         evidence.push(`Simulation revert: ${sim.revertReason}.`);
         likelyCauses.unshift(`Contract revert: ${sim.revertReason}.`);
+        const errorHint = sim.customErrorSelector ? CUSTOM_ERROR_HINTS[sim.customErrorSelector] : null;
+        if (errorHint) {
+          likelyCauses.push(...errorHint.causes);
+          nextActions.push(...errorHint.next);
+        }
       } else if (sim.customErrorSelector) {
         evidence.push(`Simulation custom error selector: ${sim.customErrorSelector}.`);
         likelyCauses.unshift(`Contract custom error ${sim.customErrorSelector}.`);
-        nextActions.push("Decode the custom error using the verified contract ABI.");
+        const errorHint = CUSTOM_ERROR_HINTS[sim.customErrorSelector];
+        if (errorHint) {
+          likelyCauses.push(...errorHint.causes);
+          nextActions.push(...errorHint.next);
+        } else {
+          nextActions.push("Decode the custom error using the verified contract ABI.");
+        }
       } else {
         evidence.push(`Simulation RPC message: ${sim.rpcMessage}.`);
       }
