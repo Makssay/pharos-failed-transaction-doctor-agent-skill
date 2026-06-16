@@ -35,7 +35,7 @@ It never asks for private keys, never signs transactions, and never sends write 
 Install into the current Agent Center style repo:
 
 ```powershell
-npx skills add https://github.com/Makssay/pharos-failed-transaction-doctor
+npx skills add https://github.com/Makssay/pharos-failed-transaction-doctor-agent-skill
 ```
 
 This creates:
